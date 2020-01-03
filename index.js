@@ -1,16 +1,46 @@
 const Discord = require("discord.js");
+const file = {
+  "prefix": {
+    "default": "H!"
+  },
+  "TOKEN": "NjI3MzcwNzkzMzY5NjAwMDEx.Xg5eKQ.KO3uKYCP5QlskLmWSumMa5fdoAg",
+  "BOT_ID": "627370793369600011"
+}
+
 const bot     = new Discord.Client({fetchAllMembers: true});
 const fs      = require("fs");
 const moment  = require("moment");
+const db = require("quick.db")
+const premium = new db.table("premium")
+const premiumcode = new db.table("premiumcode")
+const DBL = require('dblapi.js');
+const dbl = new DBL("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYyNzM3MDc5MzM2OTYwMDAxMSIsImJvdCI6dHJ1ZSwiaWF0IjoxNTcwNzQzODc3fQ.raZzeJPoAaTSCRs_YXbq1peOddav6ZfKUHqQFQNlYoI", { webhookPort: 5000, webhookAuth: 'secret' }, bot);
+dbl.on('posted', () => {
+  console.log(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] Server count posted!`);
+})
 
-var settings  = './settingsConfig/settings.json';
-var file = require(settings)
-
-var TOKEN = file.TOKEN;
+dbl.on('error', e => {
+ console.log(`Oops! ${e}`);
+})
+dbl.webhook.on('ready', hook => {
+  console.log(`Webhook running at http://${hook.hostname}:${hook.port}${hook.path}`);
+});
+dbl.webhook.on('vote', vote => {
+  bot.users.get(vote.user).send("Thank you for voting!");
+});
+exports.db = db
+exports.premium = premium;
+exports.pcode = premiumcode;
 
 const log = (msg) => {
   console.log(`[${moment().format("YYYY-MM-DD HH:mm:ss")}] ${msg}`);
 };
+
+bot.on("guildMemberAdd", member => {
+    if(premium.get(member.id)){
+        member.addRole(member.guild.roles.get("662758123261657182").id)
+    }
+})
 
 bot.commands = new Discord.Collection();
 bot.aliases = new Discord.Collection();
@@ -26,15 +56,28 @@ fs.readdir("./cmd/", (err, files) => {
     });
   });
 });
-
-bot.on("guildMemberAdd", function(member) {
-  member.addRole(member.guild.roles.find("name", "Members")).then(() => {
-  })
+bot.on('ready', async() => {
+    setInterval(function(){
+    bot.user.setPresence({
+        game: {
+            name: `H! | ${bot.users.size} users`,
+            type: "STREAMING",
+            url: "https://www.twitch.tv/discordapp"
+        }
+    });
+    }, 15000)
 });
+
+bot.on('ready', () => {
+    setInterval(function(){
+        bot.channels.find(c => c.id === "656311687141523499").setName("Servercount: " + bot.guilds.size)
+        bot.channels.find(c => c.id === "656312469806907427").setName("Usercount: " + bot.users.size)
+    }, 12000)
+})
 
 bot.on("message", msg => {
 
-  var prefix = (file.prefix[msg.guild.id] == undefined) ? file.prefix["default"] : file.prefix[msg.guild.id];
+  var prefix = "H!";
 
   if (msg.author.bot) return;
   if (!msg.content.startsWith(prefix)) return;
@@ -63,11 +106,11 @@ bot.on("ready", () => {
 bot.on("error", console.error);
 bot.on("warn", console.warn);
 
-bot.login(TOKEN);
+bot.login("NjI3MzcwNzkzMzY5NjAwMDEx.Xg653Q.7xQqQgW8u-tpFkU2IVIx8RC7c3Y");
 
 bot.on('disconnect', function(erMsg, code) {
   console.log('----- Bot disconnected from Discord with code', code, 'for reason:', erMsg, '-----');
-  bot.login(TOKEN);
+  bot.login("NjI3MzcwNzkzMzY5NjAwMDEx.Xg653Q.7xQqQgW8u-tpFkU2IVIx8RC7c3Y");
 });
 
 bot.reload = function (command) {
@@ -101,6 +144,9 @@ bot.elevation = function (msg) {
 
   if (msg.member.hasPermission("ADMINISTRATOR")) permlvl = 3;
 
-  if (msg.author.id === "103509994074312704") permlvl = 4;
+  if (msg.author.id === "539195184357965833") permlvl = 4;
+    
+  if (premium.get(msg.author.id)) permlvl = 5;
+    
   return permlvl;
 };
