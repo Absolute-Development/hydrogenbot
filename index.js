@@ -67,7 +67,7 @@ bot.login(TOKEN);
 
 bot.on('disconnect', function(erMsg, code) {
   console.log('----- Bot disconnected from Discord with code', code, 'for reason:', erMsg, '-----');
-  bot.connect(TOKEN);
+  bot.login(TOKEN);
 });
 
 bot.reload = function (command) {
